@@ -1,0 +1,116 @@
+---
+title: "pmm-km7-02"
+format: html
+editor: visual
+---
+
+# KM7-02: Chi-Quadrat-Test - Aufgaben
+
+```{r}
+install.packages("tidyverse")
+```
+
+```{r}
+library(tidyverse)
+```
+
+library(tidyverse)
+
+# ------------------------------------------------------------------------------
+
+# 0. Daten einlesen und vorbereiten
+
+```{r}
+pfad <- r'(C:\Users\Startklar\OneDrive\Dokumente\5. Klasse HTL\PMM Graf Dracula\PMM\betriebsdaten.csv)'
+
+```
+
+```{r}
+daten <- read.csv(pfad)
+datenwwwwwaa
+```
+
+# Erstelle die Kreuztabelle
+
+tab \<- table(daten$maschine, daten$iok) print("Kreuztabelle:") print(tab)
+
+# ------------------------------------------------------------------------------
+
+# Aufgabe 1: Vorhersage und Teststatistik von Hand
+
+# Welche Zelle trägt am meisten zur Teststatistik bei?
+
+# ------------------------------------------------------------------------------
+
+# Gesamtsumme = 116
+
+# Spaltensumme "ausserhalb" = 6
+
+# Erwartet M3 ausserhalb = 40 \* 6 / 116 = 2.07
+
+# Beobachtet M3 ausserhalb = 6
+
+# Beitrag Zelle M3/ausserhalb:
+
+beitrag_m3_ausserhalb \<- (6 - 2.07)\^2 / 2.07 cat("\nBeitrag M3 'ausserhalb' zur Teststatistik (von Hand):", round(beitrag_m3_ausserhalb, 2), "\n")
+
+# Vergleich mit R (Unabhängigkeitstest)
+
+chi_test_unab \<- chisq.test(tab) cat("\nVergleich mit R (chisq.test):\n") print(chi_test_unab) \# Die Residuen zeigen den Beitrag jeder Zelle (quadriert ergeben sie X-squared) cat("\nQuadrierte standardisierte Residuen (Beitrag zur Teststatistik in R):\n") print(chi_test_unab\$residuals\^2)
+
+# ------------------------------------------------------------------------------
+
+# Aufgabe 2: Anpassungstests für alle Maschinen (Sollquote = 10% Ausschuss)
+
+# ------------------------------------------------------------------------------
+
+# Beobachtete Werte aus der Tabelle:
+
+# M1: 37 in Toleranz, 0 außerhalb (gesamt: 37)
+
+# M2: 39 in Toleranz, 0 außerhalb (gesamt: 39)
+
+# M3: 34 in Toleranz, 6 außerhalb (gesamt: 40)
+
+# Wahrscheinlichkeiten: p = c(in_Toleranz = 0.9, ausserhalb = 0.1)
+
+# Test für M1
+
+test_m1 \<- chisq.test(c(in_Toleranz = 37, ausserhalb = 0), p = c(0.9, 0.1)) \# Test für M2 test_m2 \<- chisq.test(c(in_Toleranz = 39, ausserhalb = 0), p = c(0.9, 0.1)) \# Test für M3 test_m3 \<- chisq.test(c(in_Toleranz = 34, ausserhalb = 6), p = c(0.9, 0.1))
+
+# Ergebnisse zusammenfassen
+
+ergebnisse_anpassung \<- tibble( Maschine = c("M1", "M2", "M3"), X_squared = c(test_m1$statistic, test_m2$statistic, test_m3$statistic),
+  p_value = c(test_m1$p.value, test_m2$p.value, test_m3$p.value) )
+
+cat("\nErgebnisse der Anpassungstests (Soll = 10% Ausschuss):\n") print(ergebnisse_anpassung)
+
+# Interpretation zu Aufgabe 2:
+
+# M1 (p=0.043) und M2 (p=0.036) fallen statistisch auf (Signifikanzniveau 5%).
+
+# Sie weichen ab, weil sie *weniger* Ausschuss produzieren als die geforderten 10%.
+
+# M3 (p=0.292) ist statistisch nicht von der 10%-Vorgabe zu unterscheiden.
+
+# ------------------------------------------------------------------------------
+
+# Aufgabe 3: Voraussetzungen für den Unabhängigkeitstest prüfen
+
+# ------------------------------------------------------------------------------
+
+# Erwartete Häufigkeiten manuell berechnen:
+
+erwartet \<- outer(rowSums(tab), colSums(tab)) / sum(tab) cat("\nErwartete Häufigkeiten:\n") print(round(erwartet, 2))
+
+# Anzahl der Zellen \< 5 prüfen:
+
+zellen_unter_5 \<- sum(erwartet \< 5) gesamt_zellen \<- length(erwartet) anteil_unter_5 \<- zellen_unter_5 / gesamt_zellen
+
+cat("\nAnzahl der Zellen \< 5:", zellen_unter_5) cat("\nAnteil der Zellen \< 5:", round(anteil_unter_5 \* 100, 2), "%\n")
+
+# Schlussfolgerung zu Aufgabe 3:
+
+if(anteil_unter_5 \> 0.2) { cat("\nDa mehr als 20% (hier 50%) der erwarteten Häufigkeiten \< 5 sind, \n") cat("darf der Chi-Quadrat-Test nicht verwendet werden (Voraussetzung verletzt).\n") cat("Stattdessen muss der exakte Test von Fisher verwendet werden:\n")
+
+\# Fisher-Test durchführen exakter_test \<- fisher.test(tab) print(exakter_test) } else { cat("\nDie Voraussetzungen für den Chi-Quadrat-Test sind erfüllt.\n") }
